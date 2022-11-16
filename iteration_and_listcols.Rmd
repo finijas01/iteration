@@ -45,6 +45,8 @@ list_norm =
     c = rnorm(20, 17, 4),
     d = rnorm(20, 100, 1)
   )
+
+is.list(list_norm)
 ```
 
 
@@ -102,6 +104,10 @@ we can map!!
 
 ```{r}
 map(list_norm, mean_and_sd)
+
+#first argument: can be a list, vector or data frame
+
+output = map(.x = list_norm, ~ mean_and_sd(.x))
 ```
 
 so...what about other functions?
@@ -112,12 +118,18 @@ map(list_norm, summary)
 ```
 
 
-nao variants...
+map variants...
 
 ```{r}
 map_dbl(list_norm, median)
 
 map_df(list_norm, mean_and_sd)
+
+map_dbl(list_norm, median, .id = "input")
+
+#.id argument keeps the names of the elements in the input list
+
+# output = map2(.x = input_1, .y = input_2, ~func(arg_1 = .x, arg_2 = .y))
 ```
 
 
@@ -179,6 +191,8 @@ Really is a list column!
 
 ```{r}
 weather_nest_df[["data"]]
+
+weather_nest_df %>% pull(data)
 ```
 
 
