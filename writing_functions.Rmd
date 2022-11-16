@@ -11,7 +11,7 @@ output: github_document
 library(tidyverse)
 library(rvest)
 
-set.seed(1)
+set.seed(1) #the output on this page is fixed
 
 knitr::opts_chunk$set(
 	echo = TRUE,
@@ -53,7 +53,7 @@ z_scores = function(x) { # x <- argument
 
   }
   
-  if(length(x) < 3) {
+  if(length(x) < 3) { #or else if
     stop("Z scores really only work if you have three or more numbers")
   }
   
@@ -233,5 +233,58 @@ dynamite_reviews = bind_rows(
 )
 
 dynamite_reviews
+```
+
+
+## Learning assessment
+
+```{r}
+lotr_load_and_tidy = function(path, range, movie_name) {
+  
+  df = readxl::read_excel(path, range = range) %>% 
+    janitor::clean_names() %>% 
+    gather(key = sex, value = words, female:male) %>% #~pivot_longer
+    mutate(race = str_to_lower(race), movie = movie_name)
+  
+  df
+  
+}
+
+lotr_tidy = 
+  bind_rows(
+    lotr_load_and_tidy("./data/LotR_Words.xlsx", "B3:D6", "fellowship_ring"),
+    lotr_load_and_tidy("./data/LotR_Words.xlsx", "F3:H6", "two_towers"),
+    lotr_load_and_tidy("./data/LotR_Words.xlsx", "J3:L6", "return_king")
+  ) %>% 
+  select(movie, everything())
+```
+
+
+## Functions as argument
+
+```{r}
+x_vec = rnorm(25, 0, 1)
+
+my_summary = function(x, summ_func) {
+  summ_func(x)
+}
+
+my_summary(x_vec, sd)
+my_summary(x_vec, IQR)
+my_summary(x_vec, var)
+```
+
+## Scoping and names
+
+```{r}
+f = function(x) {
+  z = x + y
+  z
+}
+
+x = 1
+y = 2
+
+f(x = y) #x=2
 ```
 

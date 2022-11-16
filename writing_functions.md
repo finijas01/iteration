@@ -29,7 +29,7 @@ z_scores = function(x) { # x <- argument
 
   }
   
-  if(length(x) < 3) {
+  if(length(x) < 3) { #or else if
     stop("Z scores really only work if you have three or more numbers")
   }
   
@@ -408,16 +408,81 @@ dynamite_reviews
 ```
 
     ## # A tibble: 50 × 3
-    ##    title                                stars text                              
-    ##    <chr>                                <dbl> <chr>                             
-    ##  1 Still the best                           5 "Completely stupid, absolutely no…
-    ##  2 70’s and 80’s Schtick Comedy             5 "…especially funny if you have ev…
-    ##  3 Amazon Censorship                        5 "I hope Amazon does not censor my…
-    ##  4 Watch to say you did                     3 "I know it's supposed to be a cul…
-    ##  5 Best Movie Ever!                         5 "We just love this movie and even…
-    ##  6 Quirky                                   5 "Good family film"                
-    ##  7 Funny movie - can't play it !            1 "Sony 4k player won't even recogn…
-    ##  8 A brilliant story about teenage life     5 "Napoleon Dynamite delivers dry h…
-    ##  9 HUHYAH                                   5 "Spicy"                           
-    ## 10 Cult Classic                             4 "Takes a time or two to fully app…
+    ##    title                                      stars text                        
+    ##    <chr>                                      <dbl> <chr>                       
+    ##  1 Best                                           5 "One of the funniest movies…
+    ##  2 Classic Movie                                  5 "Love this movie. Everyone …
+    ##  3 Goofy movie                                    5 "I used this movie for a mi…
+    ##  4 Lol hey it’s Napoleon. What’s not to love…     5 "Vote for Pedro"            
+    ##  5 Still the best                                 5 "Completely stupid, absolut…
+    ##  6 70’s and 80’s Schtick Comedy                   5 "…especially funny if you h…
+    ##  7 Amazon Censorship                              5 "I hope Amazon does not cen…
+    ##  8 Watch to say you did                           3 "I know it's supposed to be…
+    ##  9 Best Movie Ever!                               5 "We just love this movie an…
+    ## 10 Quirky                                         5 "Good family film"          
     ## # … with 40 more rows
+
+## Learning assessment
+
+``` r
+lotr_load_and_tidy = function(path, range, movie_name) {
+  
+  df = readxl::read_excel(path, range = range) %>% 
+    janitor::clean_names() %>% 
+    gather(key = sex, value = words, female:male) %>% #~pivot_longer
+    mutate(race = str_to_lower(race), movie = movie_name)
+  
+  df
+  
+}
+
+lotr_tidy = 
+  bind_rows(
+    lotr_load_and_tidy("./data/LotR_Words.xlsx", "B3:D6", "fellowship_ring"),
+    lotr_load_and_tidy("./data/LotR_Words.xlsx", "F3:H6", "two_towers"),
+    lotr_load_and_tidy("./data/LotR_Words.xlsx", "J3:L6", "return_king")
+  ) %>% 
+  select(movie, everything())
+```
+
+## Functions as argument
+
+``` r
+x_vec = rnorm(25, 0, 1)
+
+my_summary = function(x, summ_func) {
+  summ_func(x)
+}
+
+my_summary(x_vec, sd)
+```
+
+    ## [1] 1.05221
+
+``` r
+my_summary(x_vec, IQR)
+```
+
+    ## [1] 1.232144
+
+``` r
+my_summary(x_vec, var)
+```
+
+    ## [1] 1.107147
+
+## Scoping and names
+
+``` r
+f = function(x) {
+  z = x + y
+  z
+}
+
+x = 1
+y = 2
+
+f(x = y) #x=2
+```
+
+    ## [1] 4
