@@ -103,6 +103,22 @@ sim_results_df %>%
 ```
 
 
+```{r}
+sim_results_df %>% 
+  pivot_longer(
+    mu_hat:sigma_hat,
+    names_to = "parameter", 
+    values_to = "estimate") %>% 
+  group_by(parameter) %>% 
+  summarize(
+    emp_mean = mean(estimate),
+    emp_sd = sd(estimate)) %>% 
+  knitr::kable(digits = 3)
+```
+
+
+
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 ## Let's see two inputs...
@@ -123,23 +139,24 @@ sim_results_df =
 sim_results_df %>% 
   mutate(
     sample_size = str_c("N = ", sample_size),
-    sample_size = fct_inorder(sample_size)
+    sample_size = fct_inorder(sample_size) #by the order in which they first appear
   ) %>% 
-  ggplot(aes(x = sample_size, y = mu_hat)) +
+  ggplot(aes(x = sample_size, y = mu_hat, fill = sample_size)) +
   geom_violin()
 ```
 
 
 ```{r}
 sim_results_df %>% 
-  mutate(
-    sample_size = str_c("N = ", sample_size),
-    sample_size = fct_inorder(sample_size)
-  ) %>% 
-  group_by(sample_size) %>% 
-  summarize(emp_st_err = sd(mu_hat))
-
-## Unfinished!
+  pivot_longer(
+    mu_hat:sigma_hat,
+    names_to = "parameter", 
+    values_to = "estimate") %>% 
+  group_by(parameter, sample_size) %>% 
+  summarize(
+    emp_mean = mean(estimate),
+    emp_var = var(estimate)) %>% 
+  knitr::kable(digits = 3)
 ```
 
 
@@ -166,5 +183,40 @@ sim_results_df %>%
   ggplot(aes(x = sample_size, y = mu_hat)) +
   geom_violin() +
   facet_grid(. ~true_sigma)
+```
+
+## Using `rerun`
+
+```{r}
+sim_results_df =   
+  rerun(100, sim_mean_sd(30, 2, 3)) %>% 
+  bind_rows()
+```
+
+
+```{r}
+n_list = 
+  list(
+    "n_30"  = 30, 
+    "n_60"  = 60, 
+    "n_120" = 120, 
+    "n_240" = 240)
+
+output = vector("list", length = 4)
+
+for (i in 1:4) {
+  output[[i]] = rerun(100, sim_mean_sd(n_list[[i]])) %>% 
+    bind_rows
+}
+```
+
+```{r}
+sim_results_df = 
+  tibble(sample_size = c(30, 60, 120, 240)) %>% 
+  mutate(
+    output_lists = map(.x = sample_size, ~rerun(1000, sim_mean_sd(n = .x))),
+    estimate_dfs = map(output_lists, bind_rows)) %>% 
+  select(-output_lists) %>% 
+  unnest(estimate_dfs)
 ```
 

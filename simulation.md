@@ -70,6 +70,24 @@ sim_results_df %>%
 
 <img src="simulation_files/figure-gfm/unnamed-chunk-6-1.png" width="90%" />
 
+``` r
+sim_results_df %>% 
+  pivot_longer(
+    mu_hat:sigma_hat,
+    names_to = "parameter", 
+    values_to = "estimate") %>% 
+  group_by(parameter) %>% 
+  summarize(
+    emp_mean = mean(estimate),
+    emp_sd = sd(estimate)) %>% 
+  knitr::kable(digits = 3)
+```
+
+| parameter | emp_mean | emp_sd |
+|:----------|---------:|-------:|
+| mu_hat    |    6.980 |  0.756 |
+| sigma_hat |    3.961 |  0.499 |
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 ## Let’s see two inputs…
@@ -90,35 +108,40 @@ sim_results_df =
 sim_results_df %>% 
   mutate(
     sample_size = str_c("N = ", sample_size),
-    sample_size = fct_inorder(sample_size)
+    sample_size = fct_inorder(sample_size) #by the order in which they first appear
   ) %>% 
-  ggplot(aes(x = sample_size, y = mu_hat)) +
+  ggplot(aes(x = sample_size, y = mu_hat, fill = sample_size)) +
   geom_violin()
 ```
 
-<img src="simulation_files/figure-gfm/unnamed-chunk-8-1.png" width="90%" />
+<img src="simulation_files/figure-gfm/unnamed-chunk-9-1.png" width="90%" />
 
 ``` r
 sim_results_df %>% 
-  mutate(
-    sample_size = str_c("N = ", sample_size),
-    sample_size = fct_inorder(sample_size)
-  ) %>% 
-  group_by(sample_size) %>% 
-  summarize(emp_st_err = sd(mu_hat))
+  pivot_longer(
+    mu_hat:sigma_hat,
+    names_to = "parameter", 
+    values_to = "estimate") %>% 
+  group_by(parameter, sample_size) %>% 
+  summarize(
+    emp_mean = mean(estimate),
+    emp_var = var(estimate)) %>% 
+  knitr::kable(digits = 3)
 ```
 
-    ## # A tibble: 4 × 2
-    ##   sample_size emp_st_err
-    ##   <fct>            <dbl>
-    ## 1 N = 30           0.698
-    ## 2 N = 60           0.524
-    ## 3 N = 120          0.374
-    ## 4 N = 240          0.265
+    ## `summarise()` has grouped output by 'parameter'. You can override using the
+    ## `.groups` argument.
 
-``` r
-## Unfinished!
-```
+| parameter | sample_size | emp_mean | emp_var |
+|:----------|------------:|---------:|--------:|
+| mu_hat    |          30 |    7.008 |   0.488 |
+| mu_hat    |          60 |    6.985 |   0.274 |
+| mu_hat    |         120 |    7.009 |   0.140 |
+| mu_hat    |         240 |    6.999 |   0.070 |
+| sigma_hat |          30 |    3.968 |   0.268 |
+| sigma_hat |          60 |    3.998 |   0.128 |
+| sigma_hat |         120 |    3.996 |   0.066 |
+| sigma_hat |         240 |    3.990 |   0.035 |
 
 ``` r
 sim_results_df = 
@@ -144,4 +167,38 @@ sim_results_df %>%
   facet_grid(. ~true_sigma)
 ```
 
-<img src="simulation_files/figure-gfm/unnamed-chunk-11-1.png" width="90%" />
+<img src="simulation_files/figure-gfm/unnamed-chunk-12-1.png" width="90%" />
+
+## Using `rerun`
+
+``` r
+sim_results_df =   
+  rerun(100, sim_mean_sd(30, 2, 3)) %>% 
+  bind_rows()
+```
+
+``` r
+n_list = 
+  list(
+    "n_30"  = 30, 
+    "n_60"  = 60, 
+    "n_120" = 120, 
+    "n_240" = 240)
+
+output = vector("list", length = 4)
+
+for (i in 1:4) {
+  output[[i]] = rerun(100, sim_mean_sd(n_list[[i]])) %>% 
+    bind_rows
+}
+```
+
+``` r
+sim_results_df = 
+  tibble(sample_size = c(30, 60, 120, 240)) %>% 
+  mutate(
+    output_lists = map(.x = sample_size, ~rerun(1000, sim_mean_sd(n = .x))),
+    estimate_dfs = map(output_lists, bind_rows)) %>% 
+  select(-output_lists) %>% 
+  unnest(estimate_dfs)
+```
